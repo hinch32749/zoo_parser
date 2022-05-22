@@ -1,6 +1,14 @@
+import os
+import django
 import requests
 from bs4 import BeautifulSoup
-import json
+#
+# os.environ.setdefault("DJANGO_SETTINGS_MODULE", "zoo_parser.zoo_parser_conf.settings")  # zoo_parser_conf название проекта
+# django.setup()
+
+# from zoo_parser.main_parser.models import Product
+#
+# p = Product.objects.all()
 
 
 def parser_ezoo():
@@ -52,7 +60,7 @@ def parser_ezoo():
 
                     products = soup.find("div", class_="catalog js-catalog").find_all("a", class_="cart__title-link")
 
-                    for product in products[:1]:
+                    for product in products[:3]:
                         response_product = requests.get(product.get("href")).text
                         dict_["url_of_product"] = product.get("href")
                         soup_product = BeautifulSoup(response_product, "lxml")

@@ -59,7 +59,8 @@ def parser_zootovary():
                                         .until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "div.product-item.clearfix")))
                                     for product in products:
                                         print(f'IMAGE -- {product.find_element(by=By.TAG_NAME, value="img").get_attribute("src")}')
-                                        url = product.find_element(by=By.CSS_SELECTOR, value="div.product-img").find_element(by=By.TAG_NAME, value="a").get_attribute("href")
+                                        url = product.find_element(by=By.CSS_SELECTOR, value="div.product-img").\
+                                            find_element(by=By.TAG_NAME, value="a").get_attribute("href")
                                         print(f'URL -- {url}')
                                         for price in product.find_elements(by=By.CSS_SELECTOR, value="td"):
                                             if 'корзин' in price.text.lower() or 'заказ' in price.text.lower():
@@ -85,12 +86,9 @@ def parser_zootovary():
                                     .until(EC.presence_of_element_located((By.CSS_SELECTOR, "span.niceCheck.filterInput")))
                                 opt.click()
                                 time.sleep(2)
-                                break
-                            break
                     except:
                         print("No FILTERS")
-                        x = 0
-                        while x < 1:
+                        while True:
                             products = WebDriverWait(new_browser, 10, ignored_exceptions=ignored_exceptions) \
                                 .until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "div.product-item.clearfix")))
                             for product in products:
@@ -114,10 +112,9 @@ def parser_zootovary():
                             except:
                                 print("Закончились страницы")
                                 break
-                            x += 1
+
                     finally:
                         new_browser.close()
-                    break
     except:
         print("BAD CONNECTION")
     finally:
