@@ -10,8 +10,9 @@ import time
 
 
 def parser_zootovary():
+    list_filters = ['возраст', 'размер', 'особенности', 'свойства', 'тип', 'длина', 'состав', 'вид животного']
     try:
-        s = Service('../chromedriver/chromedriver')
+        s = Service('../zoo_parser_conf/chromedriver/chromedriver')
         op = webdriver.ChromeOptions()
         op.add_argument('--headless')
         browser = webdriver.Chrome(service=s, options=op)
@@ -37,22 +38,26 @@ def parser_zootovary():
                     time.sleep(2)
                     dict_["category_of_product"] = cat.get_attribute("text")
                     print(f'{cat.get_attribute("text")} --- {cat.get_attribute("href")}')
-                    new_browser = webdriver.Chrome(service=s)
+                    op = webdriver.ChromeOptions()
+                    op.add_argument('--headless')
+                    op.add_argument('window-size=1920,1080')
+                    new_browser = webdriver.Chrome(service=s, options=op)
                     new_browser.get(cat.get_attribute("href"))
-                    new_browser.fullscreen_window()
+                    # new_browser.fullscreen_window()
                     new_browser.implicitly_wait(10)
                     try:
                         products_page = WebDriverWait(new_browser, 10, ignored_exceptions=ignored_exceptions) \
                             .until(EC.presence_of_all_elements_located((By.CLASS_NAME, "left-nav")))
                         time.sleep(3)
                         for page in products_page:
-                            print(page.find_element(By.CSS_SELECTOR, "div.item-name").text)
+                            print(page.find_element(By.CSS_SELECTOR, "div.item-name").text)########
                             if page.find_element(By.CSS_SELECTOR, "div.item-name").text.lower() == 'производитель':
                                 continue
                             options = page.find_element(By.CSS_SELECTOR, "ul.view-item").find_elements(by=By.TAG_NAME, value="li")
                             print('---------------')
                             for option in options:
                                 print(f'OPTION -- {option.text}')
+                                dict_["age"] = option.text
                                 opt = WebDriverWait(option, 10, ignored_exceptions=ignored_exceptions) \
                                     .until(EC.presence_of_element_located((By.CSS_SELECTOR, "span.niceCheck.filterInput")))
                                 opt.click()
@@ -61,20 +66,30 @@ def parser_zootovary():
                                     products = WebDriverWait(new_browser, 10, ignored_exceptions=ignored_exceptions) \
                                         .until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "div.product-item.clearfix")))
                                     for product in products:
-                                        print(f'IMAGE -- {product.find_element(by=By.TAG_NAME, value="img").get_attribute("src")}')
-                                        url = product.find_element(by=By.CSS_SELECTOR, value="div.product-img").\
+                                        # print(f'IMAGE -- {product.find_element(by=By.TAG_NAME, value="img").get_attribute("src")}')
+                                        dict_["image"] = product.find_element(by=By.TAG_NAME, value="img").get_attribute("src")
+                                        url_of_product = product.find_element(by=By.CSS_SELECTOR, value="div.product-img").\
                                             find_element(by=By.TAG_NAME, value="a").get_attribute("href")
-                                        print(f'URL -- {url}')
+                                        # print(f'URL -- {url_of_product}')
+                                        dict_["url_of_product"] = url_of_product
+                                        # print(f'TITLE -- {product.find_element(by=By.CSS_SELECTOR, value="h2").text}')
+                                        dict_["title"] = product.find_element(by=By.CSS_SELECTOR, value="h2").text
                                         try:
+                                            list_price = []
                                             for price in product.find_elements(by=By.CSS_SELECTOR, value="td"):
                                                 if 'корзин' in price.text.lower() or 'заказ' in price.text.lower():
                                                     continue
-                                                print(f'PRICE -- {price.text}')
+                                                list_price.append(price.text)
+                                            pare = len(list_price[2:]) // 2
+                                            for i in range(0, pare*2, 2):
+                                                dict_["goods"] = list_price[2+i]
+                                                dict_["price"] = list_price[3+i]
+                                                # dict_save
+                                            # print(list_price[2:])
                                         except Exception as ex:
-                                            print(ex)
+                                            # print(ex)
                                             print("Нет цен!")
-
-                                        print(f'TITLE -- {product.find_element(by=By.CSS_SELECTOR, value="h2").text}')
+                                        print(dict_)
                                         print('================')
                                     time.sleep(1)
 
@@ -98,14 +113,30 @@ def parser_zootovary():
                             products = WebDriverWait(new_browser, 10, ignored_exceptions=ignored_exceptions) \
                                 .until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "div.product-item.clearfix")))
                             for product in products:
-                                print(f'IMAGE -- {product.find_element(by=By.TAG_NAME, value="img").get_attribute("src")}')
-                                url = product.find_element(by=By.CSS_SELECTOR, value="div.product-img").find_element(
+                                # print(f'IMAGE -- {product.find_element(by=By.TAG_NAME, value="img").get_attribute("src")}')
+                                dict_["image"] = product.find_element(by=By.TAG_NAME, value="img").get_attribute("src")
+                                url_of_product = product.find_element(by=By.CSS_SELECTOR, value="div.product-img").find_element(
                                     by=By.TAG_NAME, value="a").get_attribute("href")
-                                print(f'URL -- {url}')
-                                for price in product.find_elements(by=By.CSS_SELECTOR, value="td"):
-                                    print(list(price))
-                                    print(f'PRICE -- {price.text}')
-                                print(f'TITLE -- {product.find_element(by=By.CSS_SELECTOR, value="h2").text}')
+                                # print(f'URL -- {url_of_product}')
+                                dict_["url_of_product"] = url_of_product
+                                # print(f'TITLE -- {product.find_element(by=By.CSS_SELECTOR, value="h2").text}')
+                                dict_["title"] = product.find_element(by=By.CSS_SELECTOR, value="h2").text
+                                try:
+                                    list_price = []
+                                    for price in product.find_elements(by=By.CSS_SELECTOR, value="td"):
+                                        if 'корзин' in price.text.lower() or 'заказ' in price.text.lower():
+                                            continue
+                                        list_price.append(price.text)
+                                    pare = len(list_price[2:]) // 2
+                                    for i in range(0, pare * 2, 2):
+                                        dict_["goods"] = list_price[2 + i]
+                                        dict_["price"] = list_price[3 + i]
+                                        # dict_save
+                                    print(dict_)
+                                    # print(list_price[2:])
+                                except Exception as ex:
+                                    # print(ex)
+                                    print("Нет цен!")
                                 print('================')
                             time.sleep(1)
 

@@ -3,8 +3,6 @@ import requests
 from bs4 import BeautifulSoup
 
 
-
-
 def parser_ezoo():
     site_url = 'https://e-zoo.by/'
     headers = {
