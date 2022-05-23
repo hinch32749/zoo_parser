@@ -40,7 +40,16 @@ INSTALLED_APPS = [
 
     'main_parser',
 
+    'django_celery_results',
+    'django_celery_beat',
 ]
+
+REDIS_HOST = 'localhost'
+REDIS_PORT = 6379
+
+CELERY_RESULT_BACKEND = 'django-db'
+# CELERY_RESULT_BACKEND = "redis://127.0.0.1:6379/0"
+CELERY_BROKER_URL = "redis://localhost:6379/0"
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

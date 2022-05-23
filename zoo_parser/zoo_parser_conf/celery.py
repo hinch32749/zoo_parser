@@ -1,11 +1,24 @@
-import time
+import os
+import datetime
 import requests
+import time
 from bs4 import BeautifulSoup
+from celery import Celery
+from zoo_parser_conf import settings
 
 
 
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'zoo_parser_conf.settings')
+app = Celery("zoo_parser_conf")
+app.config_from_object('django.conf:settings', namespace='CELERY')
+app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
 
+
+@app.task
 def parser_ezoo():
+    from main_parser.models import Product
+    p = Product.objects.all()
+    print(p)
     site_url = 'https://e-zoo.by/'
     headers = {
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9"}
@@ -13,7 +26,7 @@ def parser_ezoo():
     soup = BeautifulSoup(response, "lxml")
     animals = soup.find("ul", class_="nav__list js-nav-list").find_all("li", class_="nav__item")
 
-    for animal in animals[4:5]:
+    for animal in animals[4:]:
         dict_ = {}
         dict_["site_url"] = site_url
         dict_["animal"] = animal.find("a", class_="nav__link").text.strip()
@@ -45,7 +58,6 @@ def parser_ezoo():
 
                 while True:
                     url = subcategory_of_product.find("a").get("href")
-
                     url = url + f'?page={page}'
                     resp = requests.get(url).text
                     soup = BeautifulSoup(resp, "lxml")
@@ -53,7 +65,7 @@ def parser_ezoo():
 
                     products = soup.find("div", class_="catalog js-catalog").find_all("a", class_="cart__title-link")
 
-                    for product in products[:]:
+                    for product in products[:3]:
                         response_product = requests.get(product.get("href")).text
                         dict_["url_of_product"] = product.get("href")
                         soup_product = BeautifulSoup(response_product, "lxml")
@@ -84,11 +96,4 @@ def parser_ezoo():
                     if not soup.find("a", class_="pagination__link pagination__link_next"):
                         break
 
-
-def main():
-    parser_ezoo()
-
-
-if __name__ == "__main__":
-    main()
 

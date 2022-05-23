@@ -5,14 +5,14 @@ class Product(models.Model):
     site_url = models.CharField(max_length=100, verbose_name='Имя сайта')
     animal = models.CharField(max_length=100, verbose_name='Животное')
     category_of_product = models.CharField(max_length=100, verbose_name='Категория продукта')
-    subcategory_of_product = models.CharField(max_length=100, verbose_name='Подкатегория?)?)')
+    subcategory_of_product = models.CharField(max_length=100, verbose_name='Подкатегория?)?)', blank=True, null=True)
     url_of_product = models.CharField(max_length=200, verbose_name='Ссылка на продукт')
     title = models.CharField(max_length=200, verbose_name='Название продукта')
     brand = models.CharField(max_length=70, verbose_name='Производитель')
-    goods = models.CharField(max_length=70, verbose_name='Товар')
-    price = models.CharField(max_length=70, verbose_name='Цена')
-    price_online_pickup = models.CharField(max_length=70, verbose_name='Цена online-заказ самовывоз')
-    price_online_delivery = models.CharField(max_length=70, verbose_name='Цена online-заказ на доставку')
+    goods = models.CharField(max_length=70, verbose_name='Товар', blank=True, null=True)
+    price = models.CharField(max_length=70, verbose_name='Цена', blank=True, null=True)
+    price_online_pickup = models.CharField(max_length=70, verbose_name='Цена online-заказ самовывоз', blank=True, null=True)
+    price_online_delivery = models.CharField(max_length=70, verbose_name='Цена online-заказ на доставку', blank=True, null=True)
 
     class Meta:
         verbose_name_plural = 'Товары'
@@ -22,5 +22,3 @@ class Product(models.Model):
         return self.title
 
 
-def lol():
-    print("HEHE")
