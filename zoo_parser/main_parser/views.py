@@ -1,11 +1,11 @@
 from django.shortcuts import render
+from django.views.generic import ListView
+from django_tables2 import SingleTableView
 from .models import Product
-from zoo_parser_conf.celery import hello
+from .tables import ProductTable
 
 
-def index(request):
-    p = Product.objects.all()
-    a = hello.delay()
-    print(a.status)
-    context = {'p': p}
-    return render(request, 'main_parser/index.html', context)
+class ProductListView(SingleTableView):
+    model = Product
+    table_class = ProductTable
+    template_name = 'main_parser/index.html'

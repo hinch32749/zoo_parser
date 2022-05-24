@@ -40,6 +40,7 @@ INSTALLED_APPS = [
 
     'main_parser',
 
+    'django_tables2',
     'django_celery_results',
     'django_celery_beat',
 ]

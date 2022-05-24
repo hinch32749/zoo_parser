@@ -79,7 +79,7 @@ class Product(models.Model):
     tasties = models.ManyToManyField('Tasty', verbose_name='Вкус', default='нэту')
     url_of_product = models.CharField(max_length=200, verbose_name='Ссылка на продукт')
     title = models.CharField(max_length=200, verbose_name='Название продукта')
-    brand = models.CharField(max_length=70, verbose_name='Производитель', blank=True, null=True)
+    # brand = models.CharField(max_length=70, verbose_name='Производитель', blank=True, null=True)
     goods = models.CharField(max_length=70, verbose_name='Товар', default='Нет товара', blank=True, null=True)
     price = models.CharField(max_length=70, verbose_name='Цена', default='Нет цены', blank=True, null=True)
     price_online_pickup = models.CharField(max_length=70, verbose_name='Цена online-заказ самовывоз', blank=True, null=True)
