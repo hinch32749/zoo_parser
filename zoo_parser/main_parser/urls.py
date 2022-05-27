@@ -4,6 +4,6 @@ from .views import ProductListView, index
 
 
 urlpatterns = [
-    path('parser/', index),
+    path('parser/', index, name="parser"),
     path('', ProductListView.as_view(), name="new")
 ]
