@@ -8,7 +8,7 @@ from .tests import st
 
 class ProductListView(SingleTableView):
     # b = Brand.objects.filter(name="Happy Dog")
-    p = Product.objects.filter(brand__name='Acana')
+    p = Product.objects.filter(animal='кошки')
     queryset = p
     # queryset = Product.objects.all()
     table_class = ProductTable

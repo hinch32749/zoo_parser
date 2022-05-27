@@ -1,6 +1,7 @@
 import os
 import threading
-
+import requests
+from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
@@ -25,8 +26,6 @@ app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
 
 @app.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
-    # sender.add_periodic_task(40 , parser_zootovary_dogs,
-    #                          name='parser_dogs')
     sender.add_periodic_task(crontab(hour=2, minute=17
                                      , day_of_week='*'), parser_zootovary_dogs,
                              name='parser_dogs')
@@ -48,119 +47,17 @@ def setup_periodic_tasks(sender, **kwargs):
     sender.add_periodic_task(crontab(hour=2, minute=17
                                      , day_of_week='*'), parser_garfield_dogs,
                              name='parser_garfield_dogs')
-
-
-def threads_zootovary(url_of_category, animal, category_of_product, option_pr):
-    from main_parser.models import Product, Brand
-
-    try:
-        s = Service(
-            '/home/hinch/PycharmProjects/PARSERS/Zoo_parser/zoo_parser/zoo_parser_conf/chromedriver/chromedriver')
-        ignored_exceptions = (NoSuchElementException, StaleElementReferenceException,)
-        op = webdriver.ChromeOptions()
-        op.add_argument('--headless')
-        op.add_argument('window-size=1920,1080')
-        thread_browser = webdriver.Chrome(service=s, options=op)
-        thread_browser.get(url_of_category)
-        thread_browser.implicitly_wait(10)
-        dict_ = {}
-        dict_["site_url"] = "https://zootovary.by/"
-        dict_["animal"] = animal
-        dict_["category_of_product"] = category_of_product
-        dict_["brand"] = option_pr
-        list_navigation = WebDriverWait(thread_browser, 10, ignored_exceptions=ignored_exceptions) \
-            .until(EC.presence_of_all_elements_located((By.CLASS_NAME, "left-nav")))
-        time.sleep(3)
-        print(f'{option_pr}')
-        for navigation in list_navigation:
-            if navigation.find_element(By.CSS_SELECTOR, "div.item-name").text.lower().strip() == 'производитель' \
-                    or navigation.find_element(By.CSS_SELECTOR,
-                                               "div.item-name").text.lower().strip() == 'производители':
-                options = navigation.find_element(By.CSS_SELECTOR, "ul.view-item").find_elements(
-                    by=By.TAG_NAME, value="li")
-                for option in options:
-                    if option.text.strip() == option_pr:
-                        opt = WebDriverWait(option, 10, ignored_exceptions=ignored_exceptions) \
-                            .until(
-                            EC.presence_of_element_located((By.CSS_SELECTOR, "span.niceCheck.filterInput")))
-                        opt.click()
-                        time.sleep(10)
-                        got_price = True
-                        while got_price:
-                            products = WebDriverWait(thread_browser, 15, ignored_exceptions=ignored_exceptions) \
-                                .until(EC.presence_of_all_elements_located(
-                                (By.CSS_SELECTOR, "div.product-item.clearfix")))
-                            for product in products:
-                                url_of_product = product.find_element(by=By.CSS_SELECTOR,
-                                                                      value="div.product-img"). \
-                                    find_element(by=By.TAG_NAME, value="a").get_attribute("href")
-                                dict_["url_of_product"] = url_of_product
-                                dict_["title"] = product.find_element(by=By.CSS_SELECTOR,
-                                                                      value="h2").text.strip()
-                                list_price = []
-                                prices = product.find_elements(by=By.CSS_SELECTOR, value="td")
-                                for price in prices:
-                                    if 'корзин' in price.text.lower() or 'заказ' in price.text.lower():
-                                        continue
-                                    list_price.append(price.text)
-
-                                pare = len(list_price[2:]) // 2
-                                pr = ''
-                                if len(list_price) == 2:
-                                    pr = list_price[1]
-                                    pare = 1
-                                elif pare < 1:
-                                    print("No prices")
-                                    got_price = False
-                                    break
-                                for i in range(0, pare * 2, 2):
-                                    if pr == '':
-                                        dict_["goods"] = list_price[2 + i]
-                                        dict_["price"] = list_price[3 + i]
-                                    else:
-                                        dict_["goods"] = "в наличии"
-                                        dict_["price"] = pr
-                                    p = Product.objects.get_or_create(title=dict_["title"],
-                                                                      price=dict_["price"])[0]
-                                    try:
-                                        brand = Brand.objects.get_or_create(name=dict_["brand"])[0]
-                                    except:
-                                        pass
-                                    p.site_url = dict_["site_url"]
-                                    p.animal = dict_["animal"]
-                                    p.category_of_product = dict_["category_of_product"]
-                                    p.url_of_product = dict_["url_of_product"]
-                                    p.title = dict_["title"]
-                                    p.goods = dict_["goods"]
-                                    p.price = dict_["price"]
-                                    p.brand = brand
-                                    p.save()
-                                    print(f'{option_pr} -{dict_["price"]}- {dict_["url_of_product"]}')
-                                print('===========')
-                            time.sleep(1)
-
-                            try:
-                                paginator = WebDriverWait(thread_browser, 10,
-                                                          ignored_exceptions=ignored_exceptions) \
-                                    .until(EC.presence_of_element_located((By.CSS_SELECTOR, "li.next")))
-                                paginator.click()
-                                time.sleep(3)
-                                print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
-                            except:
-                                print("Закончились страницы")
-                                thread_browser.close()
-                                break
-                        time.sleep(5)
-    except Exception as ex:
-        print(ex)
-    finally:
-        thread_browser.close()
-        thread_browser.quit()
+    sender.add_periodic_task(crontab(hour=2, minute=17
+                                     , day_of_week='*'), parser_ezoo_dogs,
+                             name='parser_ezoo_dogs')
+    sender.add_periodic_task(crontab(hour=2, minute=17
+                                     , day_of_week='*'), parser_ezoo_cats,
+                             name='parser_ezoo_cats')
 
 
 @app.task
 def parser_zootovary_dogs():
-    from main_parser.models import Product, Age, Size, Specialty, Tasty, TypeProduct, Length, Brand
+    from main_parser.models import Product, Brand
     from concurrent.futures import ThreadPoolExecutor, wait
 
     s = Service('/home/hinch/PycharmProjects/PARSERS/Zoo_parser/zoo_parser/zoo_parser_conf/chromedriver/chromedriver')
@@ -886,6 +783,117 @@ def parser_zootovary_fishes():
         browser.quit()
 
 
+def threads_zootovary(url_of_category, animal, category_of_product, option_pr):
+    from main_parser.models import Product, Brand
+
+    try:
+        s = Service(
+            '/home/hinch/PycharmProjects/PARSERS/Zoo_parser/zoo_parser/zoo_parser_conf/chromedriver/chromedriver')
+        ignored_exceptions = (NoSuchElementException, StaleElementReferenceException,)
+        op = webdriver.ChromeOptions()
+        op.add_argument('--headless')
+        op.add_argument('window-size=1920,1080')
+        thread_browser = webdriver.Chrome(service=s, options=op)
+        thread_browser.get(url_of_category)
+        thread_browser.implicitly_wait(10)
+        dict_ = {}
+        dict_["site_url"] = "https://zootovary.by/"
+        dict_["animal"] = animal
+        dict_["category_of_product"] = category_of_product
+        dict_["brand"] = option_pr
+        list_navigation = WebDriverWait(thread_browser, 10, ignored_exceptions=ignored_exceptions) \
+            .until(EC.presence_of_all_elements_located((By.CLASS_NAME, "left-nav")))
+        time.sleep(3)
+        print(f'{option_pr}')
+        for navigation in list_navigation:
+            if navigation.find_element(By.CSS_SELECTOR, "div.item-name").text.lower().strip() == 'производитель' \
+                    or navigation.find_element(By.CSS_SELECTOR,
+                                               "div.item-name").text.lower().strip() == 'производители':
+                options = navigation.find_element(By.CSS_SELECTOR, "ul.view-item").find_elements(
+                    by=By.TAG_NAME, value="li")
+                for option in options:
+                    if option.text.strip() == option_pr:
+                        opt = WebDriverWait(option, 10, ignored_exceptions=ignored_exceptions) \
+                            .until(
+                            EC.presence_of_element_located((By.CSS_SELECTOR, "span.niceCheck.filterInput")))
+                        opt.click()
+                        time.sleep(10)
+                        got_price = True
+                        try:
+                            while got_price:
+                                products = WebDriverWait(thread_browser, 15, ignored_exceptions=ignored_exceptions) \
+                                    .until(EC.presence_of_all_elements_located(
+                                    (By.CSS_SELECTOR, "div.product-item.clearfix")))
+                                for product in products:
+                                    url_of_product = product.find_element(by=By.CSS_SELECTOR,
+                                                                          value="div.product-img"). \
+                                        find_element(by=By.TAG_NAME, value="a").get_attribute("href")
+                                    dict_["url_of_product"] = url_of_product
+                                    dict_["title"] = product.find_element(by=By.CSS_SELECTOR,
+                                                                          value="h2").text.strip()
+                                    list_price = []
+                                    prices = product.find_elements(by=By.CSS_SELECTOR, value="td")
+                                    for price in prices:
+                                        if 'корзин' in price.text.lower() or 'заказ' in price.text.lower():
+                                            continue
+                                        list_price.append(price.text)
+
+                                    pare = len(list_price[2:]) // 2
+                                    pr = ''
+                                    if len(list_price) == 2:
+                                        pr = list_price[1]
+                                        pare = 1
+                                    elif pare < 1:
+                                        print("No prices")
+                                        got_price = False
+                                        break
+                                    for i in range(0, pare * 2, 2):
+                                        if pr == '':
+                                            dict_["goods"] = list_price[2 + i]
+                                            dict_["price"] = list_price[3 + i]
+                                        else:
+                                            dict_["goods"] = "в наличии"
+                                            dict_["price"] = pr
+                                        p = Product.objects.get_or_create(title=dict_["title"],
+                                                                          price=dict_["price"])[0]
+                                        try:
+                                            brand = Brand.objects.get_or_create(name=dict_["brand"])[0]
+                                        except:
+                                            pass
+                                        p.site_url = dict_["site_url"]
+                                        p.animal = dict_["animal"]
+                                        p.category_of_product = dict_["category_of_product"]
+                                        p.url_of_product = dict_["url_of_product"]
+                                        p.title = dict_["title"]
+                                        p.goods = dict_["goods"]
+                                        p.price = dict_["price"]
+                                        p.brand = brand
+                                        p.save()
+                                        print(f'{option_pr} -{dict_["price"]}- {dict_["url_of_product"]}')
+                                    print('===========')
+                                time.sleep(1)
+
+                                try:
+                                    paginator = WebDriverWait(thread_browser, 10,
+                                                              ignored_exceptions=ignored_exceptions) \
+                                        .until(EC.presence_of_element_located((By.CSS_SELECTOR, "li.next")))
+                                    paginator.click()
+                                    time.sleep(3)
+                                    print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+                                except:
+                                    print("Закончились страницы")
+                                    thread_browser.close()
+                                    break
+                            time.sleep(5)
+                        except Exception as ex:
+                            print(f'Нет товаров по фильтру or \n{ex}')
+    except Exception as ex:
+        print(ex)
+    finally:
+        thread_browser.close()
+        thread_browser.quit()
+
+
 @app.task
 def parser_garfield_cats():
     from main_parser.models import Product, Age, Size, Specialty, Tasty, TypeProduct, Length, Brand
@@ -1156,9 +1164,7 @@ def thread_parser(page, animal, cop, url_of_category):
 
 
 def parser_of_product(product_url, animal, cop, page):
-    from main_parser.models import Product, Age, Size, Specialty, Tasty, TypeProduct, Length, Brand
-    import requests
-    from bs4 import BeautifulSoup
+    from main_parser.models import Product, Brand
 
     dict_ = {}
     dict_["animal"] = animal
@@ -1238,3 +1244,193 @@ def parser_of_product(product_url, animal, cop, page):
             p.save()
     except Exception as ex:
         print(ex)
+
+
+@app.task
+def parser_ezoo_dogs():
+    from concurrent.futures import ThreadPoolExecutor, wait
+
+    site_url = 'https://e-zoo.by/'
+    headers = {
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9"}
+    response = requests.get(url=site_url, headers=headers).text
+    soup = BeautifulSoup(response, "lxml")
+    animals = soup.find("ul", class_="nav__list js-nav-list").find_all("li", class_="nav__item")
+
+    for name_animal in animals:
+        animal = name_animal.find("a", class_="nav__link").text.lower().strip()
+        if animal == 'собаки':
+            dict_ = {}
+            dict_["site_url"] = site_url
+            dict_["animal"] = animal
+            url_animal = name_animal.find("a", class_="nav__link").get("href")
+            try:
+                response_animal = requests.get(url_animal).text
+                soup_animal = BeautifulSoup(response_animal, "lxml")
+                categories_of_product = soup_animal.find("div", class_="categories").find_all("a", class_="link-cat")
+            except Exception as ex:
+                print(f'Maybe bad connection \n{ex}')
+            for cop in categories_of_product[:5]:
+                category_of_product = cop.text.lower().strip().split("(")[0]
+                dict_["category_of_product"] = category_of_product
+                print(f'\t\t\t{category_of_product.upper()}')
+                print('=======================================')
+                url_of_category = cop.get("href")
+                response_category = requests.get(url_of_category).text
+                soup_category = BeautifulSoup(response_category, "lxml")
+                try:
+                    try:
+                        pagination = soup_category.find("div", class_="pagination").find_all("a")[-2]
+                        futures = []
+                        with ThreadPoolExecutor() as executer:
+                            for page in range(1, int(pagination.text)+1):
+                                futures.append(
+                                    executer.submit(threads_ezoo, url_of_category, animal,
+                                                    category_of_product, site_url, page)
+                                )
+                            wait(futures)
+                    except Exception as ex:
+                        print(f'In parser e-zoo DOGS(NO PAGINATION) -- {ex}')
+                        list_products = soup_category.find("div", class_="catalog js-catalog").find_all("div",
+                                                                                               class_="catalog__item js-catalog-item")
+                        for product in list_products:
+                            info = product.find("div", class_="cart__inner")
+                            url_of_product = info.find("div", class_="cart__title h3").find("a").get("href")
+                            thread = threading.Thread(target=parser_product_ezoo,
+                                                      args=(url_of_product, animal, category_of_product, site_url, page,))
+                            thread.start()
+                            thread.join()
+                except Exception as ex:
+                    print(f'In parser e-zoo DOGS(ALL TRY) -- {ex}')
+
+
+@app.task
+def parser_ezoo_cats():
+    from concurrent.futures import ThreadPoolExecutor, wait
+
+    site_url = 'https://e-zoo.by/'
+    headers = {
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9"}
+    response = requests.get(url=site_url, headers=headers).text
+    soup = BeautifulSoup(response, "lxml")
+    animals = soup.find("ul", class_="nav__list js-nav-list").find_all("li", class_="nav__item")
+
+    for name_animal in animals:
+        animal = name_animal.find("a", class_="nav__link").text.lower().strip()
+        if animal == 'кошки':
+            dict_ = {}
+            dict_["site_url"] = site_url
+            dict_["animal"] = animal
+            url_animal = name_animal.find("a", class_="nav__link").get("href")
+            try:
+                response_animal = requests.get(url_animal).text
+                soup_animal = BeautifulSoup(response_animal, "lxml")
+                categories_of_product = soup_animal.find("div", class_="categories").find_all("a", class_="link-cat")
+            except Exception as ex:
+                print(f'Maybe bad connection \n{ex}')
+            for cop in categories_of_product[:5]:
+                category_of_product = cop.text.lower().strip().split("(")[0]
+                dict_["category_of_product"] = category_of_product
+                print(f'\t\t\t{category_of_product.upper()}')
+                print('=======================================')
+                url_of_category = cop.get("href")
+                response_category = requests.get(url_of_category).text
+                soup_category = BeautifulSoup(response_category, "lxml")
+                try:
+                    try:
+                        pagination = soup_category.find("div", class_="pagination").find_all("a")[-2]
+                        futures = []
+                        with ThreadPoolExecutor() as executer:
+                            for page in range(1, int(pagination.text)+1):
+                                futures.append(
+                                    executer.submit(threads_ezoo, url_of_category, animal,
+                                                    category_of_product, site_url, page)
+                                )
+                            wait(futures)
+                    except Exception as ex:
+                        print(f'In parser e-zoo DOGS(NO PAGINATION) -- {ex}')
+                        list_products = soup_category.find("div", class_="catalog js-catalog").find_all("div",
+                                                                                               class_="catalog__item js-catalog-item")
+                        for product in list_products:
+                            info = product.find("div", class_="cart__inner")
+                            url_of_product = info.find("div", class_="cart__title h3").find("a").get("href")
+                            thread = threading.Thread(target=parser_product_ezoo,
+                                                      args=(url_of_product, animal, category_of_product, site_url, page,))
+                            thread.start()
+                            thread.join()
+                except Exception as ex:
+                    print(f'In parser e-zoo DOGS(ALL TRY) -- {ex}')
+
+
+def threads_ezoo(url_of_category, animal, category_of_product, site_url, page):
+
+    url = f'{url_of_category}?page={page}'
+    headers = {
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9"
+    }
+    try:
+        response = requests.get(url=url, headers=headers).text
+        soup = BeautifulSoup(response, "lxml")
+        list_products = soup.find("div", class_="catalog js-catalog").find_all("div", class_="catalog__item js-catalog-item")
+    except Exception as ex:
+        print(f'Maybe bad connection \n{ex}')
+
+    for product in list_products:
+        info = product.find("div", class_="cart__inner")
+        url_of_product = info.find("div", class_="cart__title h3").find("a").get("href")
+        thread = threading.Thread(target=parser_product_ezoo, args=(url_of_product, animal, category_of_product, site_url, page, ))
+        thread.start()
+        thread.join()
+
+
+def parser_product_ezoo(url_of_product, animal, category_of_product, site_url, page):
+    from main_parser.models import Product, Brand
+
+    dict_ = {}
+    dict_["site_url"] = site_url
+    dict_["animal"] = animal
+    dict_["category_of_product"] = category_of_product
+    dict_["url_of_product"] = url_of_product
+    try:
+        product_response = requests.get(url=url_of_product).text
+        soup_product = BeautifulSoup(product_response, "lxml")
+        time.sleep(0.1)
+    except Exception as ex:
+        print(f'Maybe bad connection \n{ex}')
+    try:
+        title = soup_product.find("div", class_="product__header").text.strip()
+        dict_["title"] = title
+        try:
+            brand = soup_product.find("div", class_="product__meta").find("a").text.strip()
+            dict_["brand"] = brand
+        except Exception as ex:
+            print(f'Has no brand \n{ex}')
+        prices = soup_product.find("div", class_="product__variant-table redline-mod").find_all("form", class_="product__variant js-cart-basket-submit")
+        try:
+            brand = Brand.objects.get_or_create(name=dict_["brand"])[0]
+        except Exception as ex:
+            print(f'Something with saving BRAND \n{ex}')
+        for p in prices:
+            p = p.find_all("div")
+            titles = ["goods", "price", "price_online_pickup", "price_online_delivery"]
+            for i, j in zip(titles, p[:-2]):
+                j = j.text.replace("\n", " ").strip()
+                dict_[i] = j
+
+            p = Product.objects.get_or_create(title=dict_["title"],
+                                              price=dict_["price"])[0]
+            p.site_url = dict_["site_url"]
+            p.animal = dict_["animal"]
+            p.category_of_product = dict_["category_of_product"]
+            p.url_of_product = dict_["url_of_product"]
+            p.title = dict_["title"]
+            try:
+                p.brand = brand
+            except Exception as ex:
+                print(f'Something with add BRAND to Product \n{ex}')
+            p.goods = dict_["goods"]
+            p.price = dict_["price"]
+            p.save()
+            print(f'{page} -- {brand} - {url_of_product}')
+    except Exception as ex:
+        print(f'Parser of product(MAIN TRY) \n{ex}')
