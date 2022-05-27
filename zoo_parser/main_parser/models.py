@@ -1,6 +1,17 @@
 from django.db import models
 
 
+class Brand(models.Model):
+    name = models.CharField(max_length=100, verbose_name='Производитель')
+
+    class Meta:
+        verbose_name_plural = 'Производители'
+        verbose_name = 'Производитель'
+
+    def __str__(self):
+        return self.name
+
+
 class Age(models.Model):
     name = models.CharField(max_length=50, verbose_name='Возраст')
 
@@ -75,11 +86,11 @@ class Product(models.Model):
     size = models.ForeignKey('Size', verbose_name='Размер', blank=True, null=True, on_delete=models.DO_NOTHING)
     type_product = models.ForeignKey('TypeProduct', verbose_name='Тип', blank=True, null=True, on_delete=models.DO_NOTHING)
     length = models.ForeignKey('Length', verbose_name='Длина', blank=True, null=True, on_delete=models.DO_NOTHING)
-    specialties = models.ManyToManyField('Specialty', verbose_name='Особенность', default='нэту')
-    tasties = models.ManyToManyField('Tasty', verbose_name='Вкус', default='нэту')
+    specialties = models.ManyToManyField('Specialty', verbose_name='Особенность', blank=True, null=True)
+    tasties = models.ManyToManyField('Tasty', verbose_name='Вкус', blank=True, null=True)
     url_of_product = models.CharField(max_length=200, verbose_name='Ссылка на продукт')
     title = models.CharField(max_length=200, verbose_name='Название продукта')
-    # brand = models.CharField(max_length=70, verbose_name='Производитель', blank=True, null=True)
+    brand = models.ForeignKey('Brand', verbose_name='Производитель', blank=True, null=True, on_delete=models.DO_NOTHING)
     goods = models.CharField(max_length=70, verbose_name='Товар', default='Нет товара', blank=True, null=True)
     price = models.CharField(max_length=70, verbose_name='Цена', default='Нет цены', blank=True, null=True)
     price_online_pickup = models.CharField(max_length=70, verbose_name='Цена online-заказ самовывоз', blank=True, null=True)
@@ -93,3 +104,15 @@ class Product(models.Model):
         return self.title
 
 
+class P(models.Model):
+    title = models.CharField(max_length=100, verbose_name='Название')
+    brand = models.CharField(max_length=100, verbose_name='производитель')
+    goods = models.CharField(max_length=100, verbose_name='Товар')
+    price = models.CharField(max_length=100, verbose_name='Цена')
+
+    class Meta:
+        verbose_name_plural = 'Тs'
+        verbose_name = 'T'
+
+    def __str__(self):
+        return self.title

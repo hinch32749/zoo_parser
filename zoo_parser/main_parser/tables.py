@@ -6,6 +6,8 @@ class ProductTable(tables.Table):
     class Meta:
         model = Product
         template_name = "django_tables2/bootstrap.html"
-        fields = ("animal", "category_of_product", "age", "title",
-                  "goods", "price", "specialties", "tasties",
-                  "size", "type_product", "length", )
+        fields = ("animal", "category_of_product", "title",
+                  "goods", "price", "site_url")
+
+
+

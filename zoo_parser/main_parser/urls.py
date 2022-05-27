@@ -1,8 +1,9 @@
 from django.urls import path
 
-from .views import ProductListView
+from .views import ProductListView, index
 
 
 urlpatterns = [
-    path('', ProductListView.as_view())
+    path('parser/', index),
+    path('', ProductListView.as_view(), name="new")
 ]

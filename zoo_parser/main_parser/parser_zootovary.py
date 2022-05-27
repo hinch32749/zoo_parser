@@ -10,7 +10,7 @@ import time
 
 
 def parser_zootovary():
-    list_filters = ['возраст', 'размер', 'особенности', 'свойства', 'тип', 'длина', 'состав', 'вид животного']
+    list_filters = ['возраст',   'размер', 'особенности', 'свойства', 'тип', 'длина', 'состав', 'вид животного']
     try:
         s = Service('../zoo_parser_conf/chromedriver/chromedriver')
         op = webdriver.ChromeOptions()
